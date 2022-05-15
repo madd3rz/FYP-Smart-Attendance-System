@@ -1,7 +1,12 @@
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const validator = require('validator');
-const User = require('../models/User');
+const check = require('../middlewares/UserCheck')
+const User = require('../models/LoginUser');
+const Teacher = require('../models/Teacher');
+const Parent = require('../models/Parent');
+const Admin = require('../models/Admin');
+const Student = require('../models/Student');
 const Session = require('../models/Session');
 
 const message = (req) => {
@@ -51,9 +56,11 @@ exports.login = (req, res, next) => {
 			bcrypt
 				.compare(req.body.inputPassword, user.password)
 				.then(doMatch => {
+					check.checkUsr(req, res, next) // check the user's account type
 					if (doMatch) {
 						req.session.isLoggedIn = true;
 			            req.session.user = user.dataValues;
+						console.log(req.session);
 			            return req.session.save(err => {
 							console.log(err);
 							res.redirect('/');

@@ -8,10 +8,11 @@
     "start": "source .env-example; nodemon index.js",
     "postinstall": "cp .env-example .env"
   },
-  "author": "Mangesh Ghadigaonkar",
+  "author": "Woo <68097@siswa.unimas.my>",
   "license": "ISC",
   "devDependencies": {
-    "nodemon": "^2.0.4"
+    "nodemon": "^2.0.4",
+    "sequelize-cli": "^6.4.1"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -23,6 +24,8 @@
     "express-flash": "0.0.2",
     "express-handlebars": "^5.1.0",
     "express-session": "^1.17.1",
+    "js-datepicker": "^5.18.0",
+    "mqtt": "^4.3.7",
     "mysql2": "^2.1.0",
     "sequelize": "^6.3.4",
     "validator": "^13.1.1"

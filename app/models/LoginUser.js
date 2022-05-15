@@ -2,7 +2,7 @@ const bcrypt = require('bcryptjs');
 const { Sequelize, DataTypes } = require('sequelize');
 const sequelize = require('../../config/database');
 
-const User = sequelize.define('users', {
+const LoginUser = sequelize.define('users', {
 		id: {
 			type: DataTypes.INTEGER,
 			autoIncrement: true,
@@ -36,4 +36,4 @@ const User = sequelize.define('users', {
 			}],
 	});
 
-module.exports = User;
+module.exports = LoginUser;

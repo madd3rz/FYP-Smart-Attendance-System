@@ -8,9 +8,13 @@ const bodyParser = require('body-parser');
 const session = require('express-session');
 const expressHbs = require('express-handlebars');
 const SequelizeStore = require("connect-session-sequelize")(session.Store); // initalize sequelize with session store
+const mqtt = require('mqtt');
+const client = mqtt.connect('mqtt://127.0.0.1');
 
 const app = express();
-const csrfProtection = csrf();
+const csrfProtection = csrf({
+	cookie: false,
+});
 const router = express.Router();
 
 //Loading Routes
@@ -27,7 +31,7 @@ app.use(session({
     resave: true,
     saveUninitialized: true,
     secret: process.env.SESSION_SECRET,
-  	cookie: { maxAge: 1209600000 }, // two weeks in milliseconds
+  	cookie: { maxAge: 86400000 }, // 24 hours in milliseconds
     store: new SequelizeStore({
     	db: sequelize,
     	table: "sessions",
