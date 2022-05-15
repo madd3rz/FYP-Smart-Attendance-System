@@ -8,6 +8,7 @@ const Parent = require('../models/Parent');
 const Admin = require('../models/Admin');
 const Student = require('../models/Student');
 const Session = require('../models/Session');
+const Attendance = require('../models/Attendance');
 
 const message = (req) => {
 	let message = req.flash('error');

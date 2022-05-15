@@ -6,6 +6,8 @@ const isAdmin = require('../app/middlewares/UserCheck');
 
 router.get('/',HomeController.Homepage);
 router.get('/view', HomeController.viewAttn);
+router.get('/view-search-filter', HomeController.viewAttnTeacherSearch);
+
 router.get('/manage', HomeController.manageStudentParent);
 router.get('/add-student', HomeController.addStudent);
 router.post('/add-student', HomeController.addStudentPOST);

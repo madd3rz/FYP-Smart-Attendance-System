@@ -20,7 +20,6 @@ const Student = sequelize.define('Student', {
       StudentEmail: {
         type: Sequelize.STRING,
         allowNull: true,
-        unique: true
       },
       RFIDcode: {
         type: Sequelize.STRING,

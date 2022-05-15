@@ -25,6 +25,7 @@
     "express-handlebars": "^5.1.0",
     "express-session": "^1.17.1",
     "js-datepicker": "^5.18.0",
+    "locutus": "^2.0.16",
     "mqtt": "^4.3.7",
     "mysql2": "^2.1.0",
     "sequelize": "^6.3.4",
