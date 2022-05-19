@@ -5,17 +5,24 @@
 
 <div class="container">
 
-  <div class="table-responsive-xl row justify-content-center ">
-    <table class="table table-striped table-hover text-center">
-      <thead>
-        <tr>
-          {{{ thead }}}
-        </tr>
-      </thead>
-      <tbody>
-        {{{ tbody }}}
-      </tbody>
-    </table>
+  <div class="card-body">
+    <div class="table-responsive-xl row justify-content-center ">
+      <table class="table table-striped table-hover text-center">
+        {{#if infoMessage}}
+        <div id="info" class="text-muted alert alert-success px-4 ml-5 text-center" role="alert">
+          {{{infoMessage}}}
+        </div>
+        {{/if}}
+        <thead>
+          <tr>
+            {{{ thead }}}
+          </tr>
+        </thead>
+        <tbody>
+          {{{ tbody }}}
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <footer class="pt-4 my-md-5 pt-md-5 border-top">

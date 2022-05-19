@@ -46,7 +46,9 @@ Student.hasMany(Attendance, {
 });
 Attendance.belongsTo(Student, {
     foreignKey: {
-        name: 'StudentID'
+        name: 'StudentID',
+        allowNull: false,
+        type: Sequelize.INTEGER,
     }
 });
 

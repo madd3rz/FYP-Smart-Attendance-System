@@ -5,6 +5,10 @@ const Parent = require('../models/Parent');
 const Attendance = require('../models/Attendance');
 const sequelize = require('../../config/database');
 const join = require('locutus/php/strings/join');
+const LoginUser = require('../models/LoginUser');
+const bcrypt = require('bcryptjs');
+const Sequelize = require('sequelize');
+const Op = Sequelize.Op
 
 const errMsg = (req) => {
     let message = req.flash('error');
@@ -52,18 +56,73 @@ function merge(obj1, obj2) {
     return obj;
 }
 
+async function getHighTemp(req) {
+    var mylist;
+    var condition = {}
+    whereCondition = {};
+    var { th, tr } = {};
+    includeCondition = {};
+    whereCondition = { tempReading: { [Op.gte]: 37.50, }, checkInDateTime: sequelize.where(sequelize.fn('DATE', sequelize.col('Attendance.checkInDateTime')), sequelize.fn('curdate')), }; // WHERE tempReading >=37.50 AND DATE(checkInDateTime)= CURDATE()
+    if (req.session.role === 'parent') {
+        includeCondition = {
+            include: [
+                {
+                    required: true,
+                    model: Student,
+                    include:
+                    {
+                        required: true,
+                        model: Parent,
+                        include:
+                        {
+                            model: User,
+                            where: { id: req.session.user.id }
+                        }
+                    }
+                },
+            ]
+        }
+
+    }
+    const conditionDefault = { where: whereCondition, raw: true, nest: true, };
+    if (includeCondition) {
+        condition = merge(conditionDefault, includeCondition)
+    }
+    else {
+        condition = conditionDefault;
+    }
+
+    await Attendance.findAll(condition)
+        .then(list => {
+            mylist = list;
+        })
+        .catch(err => console.log(err));
+    if (mylist.length > 0) {
+        ({ th, tr } = toTable(mylist));
+    } else {
+        if (req.session.role === 'parent') {
+            req.flash('info', "<h3><small class=\"text-muted\">Great! Your kid(s) body temperature is OK!!</small></h3>");
+        }else
+        req.flash('info', "<h3><small class=\"text-muted\">Great! No student is having high temperature!!</small></h3>");
+    }
+    return { th, tr };
+};
+
 exports.Homepage = async (req, res, next) => {
     if (res.locals.isAuthenticated) {
         var name = req.session.user.fullName;
 
-        if (req.session.role === 'admin') {
-            res.render('AdminHome', { pageTitle: 'Homepage', admin: true, displayName: name });
+        if (req.session.isAdmin) {
+            const { th, tr } = await getHighTemp(req);
+            res.render('AdminHome', { pageTitle: 'Homepage', admin: true, displayName: name, infoMessage: infoMsg(req), thead: th, tbody: tr });
         }
-        else if (req.session.role === 'teacher') {
-            res.render('TeacherHome', { pageTitle: 'Homepage', teacher: true, displayName: name });
+        else if (req.session.isTeacher) {
+            const { th, tr } = await getHighTemp(req);
+            res.render('TeacherHome', { pageTitle: 'Homepage', teacher: true, displayName: name, infoMessage: infoMsg(req), thead: th, tbody: tr });
         }
-        else if (req.session.role === 'parent') {
-            res.render('ParentHome', { pageTitle: 'Homepage', parent: true, displayName: name });
+        else if (req.session.isParent) {
+            const { th, tr } = await getHighTemp(req);
+            res.render('ParentHome', { pageTitle: 'Homepage', parent: true, displayName: name, infoMessage: infoMsg(req), thead: th, tbody: tr });
         }
     } else {
         res.redirect('/login');
@@ -72,13 +131,13 @@ exports.Homepage = async (req, res, next) => {
 
 function toTable(mylist) {
     var col = [];//get thead
-    const data = [];
-    var arr = [];
+    var arr = [];// get td
+    const data = [];// array of thead and td elements
 
     for (var i = 0; i < mylist.length; i++) { //loop through the len of records
         for (var key in mylist[i]) {// loop through the no of columns in mylist[i]
             var size = Object.keys(mylist[i][key]).length;
-            if (size > 0 /* && arr2.length === 0 */) {// if there are JOIN tables
+            if (size > 0) {// if there are JOIN tables
                 for (var a in mylist[i][key]) {
                     if (a.includes("Name")) {
                         arr.push(mylist[i][key][a]);// store the JOIN table data
@@ -121,12 +180,12 @@ function toTable(mylist) {
 
 exports.viewAttn = async (req, res, next) => {
     var mylist;
-    if (req.session.role === 'parent') {
+    if (req.session.isParent) {
         res.render('parentView', { pageTitle: 'View Child Attendance' });
     }
-    else if (req.session.role === 'teacher') {
+    else if (req.session.isTeacher) {
 
-        await Attendance.findAll({include: { model: Student }, raw: true, nest: true })
+        await Attendance.findAll({ include: { model: Student }, raw: true, nest: true })
             .then(list => {
                 mylist = list;
             })
@@ -215,7 +274,6 @@ exports.addStudentPOST = async (req, res, next) => {
                     StudentID: req.body.studentID,
                     StudentClass: req.body.studentClass,
                     RFIDcode: req.body.RFIDcode,
-                    StudentEmail: "johndoe@example.com", //#TODO remove the default value
                 });
                 return user.save();
             } else {
@@ -244,6 +302,17 @@ exports.addParentPOST = async (req, res, next) => {
                     ParentName: req.body.parentName,
                     ParentEmail: req.body.parentEmail,
                 });
+
+                bcrypt
+                    .hash("testuser123", 12)
+                    .then(hashedPassword => {
+                        const user = new User({
+                            fullName: "johndoe",
+                            email: req.body.parentEmail,
+                            password: hashedPassword,
+                        });
+                        return user.save();
+                    })
                 return user.save();
             } else {
                 req.flash('error', 'Parent already exists in database');

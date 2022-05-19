@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const validator = require('validator');
-const check = require('../middlewares/UserCheck')
+const check = require('../middlewares/loginCheck')
 const User = require('../models/LoginUser');
 const Teacher = require('../models/Teacher');
 const Parent = require('../models/Parent');
@@ -61,7 +61,6 @@ exports.login = (req, res, next) => {
 					if (doMatch) {
 						req.session.isLoggedIn = true;
 			            req.session.user = user.dataValues;
-						console.log(req.session);
 			            return req.session.save(err => {
 							console.log(err);
 							res.redirect('/');
@@ -73,7 +72,7 @@ exports.login = (req, res, next) => {
 				})
 				.catch(err => {
 					console.log(err);
-					req.flash('error', 'Sorry! Somethig went wrong.');
+					req.flash('error', 'Sorry! Something went wrong.');
 					req.flash('oldInput',{email: req.body.inputEmail});
 					return res.redirect('/login');
 				});

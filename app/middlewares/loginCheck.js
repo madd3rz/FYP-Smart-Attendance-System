@@ -1,15 +1,13 @@
-const User = require('../models/LoginUser');
 const Admin = require('../models/Admin');
 const Teacher = require('../models/Teacher');
 const Parent = require('../models/Parent');
 
 exports.checkUsr = async (req, res, next) => {
-    console.log(req.body.inputEmail);
     await Admin.findOne({
         where: { AdminEmail: req.body.inputEmail }
     }).then((user) => {
         if (user) {
-            req.session.role = "admin";
+            req.session.isAdmin = true;
         }
         else {
             return false;
@@ -21,10 +19,9 @@ exports.checkUsr = async (req, res, next) => {
         where: { TeacherEmail: req.body.inputEmail }
     }).then((user) => {
         if (user) {
-            req.session.role = "teacher";
+            req.session.isTeacher = true;
         }
         else {
-            console.log('not teacher')
             return false;
         }
     })
@@ -34,7 +31,7 @@ exports.checkUsr = async (req, res, next) => {
         where: { ParentEmail: req.body.inputEmail }
     }).then((user) => {
         if (user) {
-            req.session.role = "parent";
+            req.session.isParent = true;
         }
         else {
             return false;
@@ -43,3 +40,7 @@ exports.checkUsr = async (req, res, next) => {
         .catch(err => console.log(err));
 
 };
+
+exports.checkStatus = async (req, res, next) => {
+
+}

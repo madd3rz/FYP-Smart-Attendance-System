@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const HomeController = require('../app/controllers/HomeController');// load and check auth in homepage
 const AuthController = require('../app/controllers/AuthController');// auth related controller
-const isAdmin = require('../app/middlewares/UserCheck');
 
 router.get('/',HomeController.Homepage);
 router.get('/view', HomeController.viewAttn);

@@ -31,7 +31,7 @@ app.use(session({
     resave: true,
     saveUninitialized: true,
     secret: process.env.SESSION_SECRET,
-  	cookie: { maxAge: 86400000 }, // 24 hours in milliseconds
+  	cookie: { maxAge: 3600000 }, // 1 hour in milliseconds
     store: new SequelizeStore({
     	db: sequelize,
     	table: "sessions",
@@ -44,6 +44,11 @@ app.use(flash());
 app.use((req, res, next) => {
 	res.locals.isAuthenticated = req.session.isLoggedIn;
 	res.locals.csrfToken = req.csrfToken();
+	res.locals.isAdmin = req.session.isAdmin;
+	console.log(req.session.isAdmin)
+	console.log(res.locals.isAdmin)
+	res.locals.isTeacher = req.session.isTeacher;
+	res.locals.isParent = req.session.isParent;
 	next();
 });
 
