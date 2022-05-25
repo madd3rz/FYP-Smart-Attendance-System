@@ -11,9 +11,6 @@ const DB_PASSWORD = process.env.DB_PASSWORD
 const sequelize = new Sequelize(DB_DATABASE, DB_USERNAME, DB_PASSWORD, {
   dialect: 'mysql',
   host: DB_HOST,
-  dialectOptions: {
-    useUTC: false, // for reading from database
-  },
   timezone: '+08:00' // for writing to database
 });
 

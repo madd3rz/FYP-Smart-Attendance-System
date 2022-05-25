@@ -8,14 +8,14 @@ const bodyParser = require('body-parser');
 const session = require('express-session');
 const expressHbs = require('express-handlebars');
 const SequelizeStore = require("connect-session-sequelize")(session.Store); // initalize sequelize with session store
-const mqtt = require('mqtt');
-const client = mqtt.connect('mqtt://127.0.0.1');
 
 const app = express();
 const csrfProtection = csrf({
 	cookie: false,
 });
 const router = express.Router();
+
+const mqtt = require('./config/mqtt');
 
 //Loading Routes
 const webRoutes = require('./routes/web');
@@ -45,8 +45,6 @@ app.use((req, res, next) => {
 	res.locals.isAuthenticated = req.session.isLoggedIn;
 	res.locals.csrfToken = req.csrfToken();
 	res.locals.isAdmin = req.session.isAdmin;
-	console.log(req.session.isAdmin)
-	console.log(res.locals.isAdmin)
 	res.locals.isTeacher = req.session.isTeacher;
 	res.locals.isParent = req.session.isParent;
 	next();

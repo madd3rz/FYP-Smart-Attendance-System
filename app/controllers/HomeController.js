@@ -1,3 +1,4 @@
+const check = require('../middlewares/loginCheck')
 const User = require('../models/LoginUser');
 const Admin = require('../models/Admin');
 const Student = require('../models/Student');
@@ -102,8 +103,8 @@ async function getHighTemp(req) {
     } else {
         if (req.session.role === 'parent') {
             req.flash('info', "<h3><small class=\"text-muted\">Great! Your kid(s) body temperature is OK!!</small></h3>");
-        }else
-        req.flash('info', "<h3><small class=\"text-muted\">Great! No student is having high temperature!!</small></h3>");
+        } else
+            req.flash('info', "<h3><small class=\"text-muted\">Great! No student is having high temperature!!</small></h3>");
     }
     return { th, tr };
 };
@@ -111,6 +112,8 @@ async function getHighTemp(req) {
 exports.Homepage = async (req, res, next) => {
     if (res.locals.isAuthenticated) {
         var name = req.session.user.fullName;
+        /* await check.checkStatus(req, res, next); // check the user's default password */
+        console.log(req.session)
 
         if (req.session.isAdmin) {
             const { th, tr } = await getHighTemp(req);
@@ -296,24 +299,31 @@ exports.addParentPOST = async (req, res, next) => {
             ParentEmail: req.body.parentEmail,
         }
     })
-        .then(user => {
+        .then(async (user) => {
             if (!user) {
-                const user = new Parent({
-                    ParentName: req.body.parentName,
-                    ParentEmail: req.body.parentEmail,
-                });
-
                 bcrypt
-                    .hash("testuser123", 12)
-                    .then(hashedPassword => {
+                    .hash("abc123", 12)
+                    .then(async (hashedPassword) => {
                         const user = new User({
-                            fullName: "johndoe",
+                            fullName: req.body.parentName,
                             email: req.body.parentEmail,
                             password: hashedPassword,
                         });
-                        return user.save();
+                        await user.save();
                     })
-                return user.save();
+                    .then(() => {
+                        User.findOne({ where: { email: req.body.parentEmail, } }).then(user => {
+                            console.log(user)
+                            const parent = new Parent({
+                                ParentName: req.body.parentName,
+                                ParentEmail: req.body.parentEmail,
+                                userId: user.id,
+                            })
+                            parent.save();
+                            return res.redirect('/')
+                        }).catch(err => { console.log(err) });
+                    })
+                    .catch(err => { console.log(err) })
             } else {
                 req.flash('error', 'Parent already exists in database');
                 req.flash('oldInput', { name: req.body.parentName, email: req.body.parentEmail });
