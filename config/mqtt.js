@@ -13,9 +13,9 @@ var userData;
 
 client.on('connect', function () {
     console.log("Connected");
-    client.subscribe('ESP32/rfid', function (err) {
+    client.subscribe('ESP32/rfid', {qos:2}, function (err) {
     })
-    client.subscribe('ESP32/temp', function (err) {
+    client.subscribe('ESP32/temp', {qos:2}, function (err) {
     })
 })
 
@@ -72,7 +72,7 @@ client.on('message', function (topic, message) {
                 .catch(err => console.log(err));;
         }
     }
-    else if (topic == "ESP32/temp") {
+    else if (topic == "ESP32/temp" && userData != null) {
         console.log("Received message on topic " + topic)
         console.log(message.toString())
         temp = message.toString();
@@ -95,7 +95,7 @@ exports.getData = async (req, res, next) => {
 }
 
 async function sendStatus(status) {
-    client.publish('ESP32/rfidstatus', status, function (err) {
+    client.publish('ESP32/rfidstatus', status, {qos:2}, function (err) {
         if (err) {
             console.log(err)
         } else {

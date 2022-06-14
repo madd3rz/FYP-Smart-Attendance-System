@@ -22,6 +22,17 @@ const message = (req) => {
 	return message;
 }
 
+const infoMsg = (req) => {
+    let message = req.flash('info');
+    if (message.length > 0) {
+        message = message[0];
+    } else {
+        message = null;
+    }
+
+    return message;
+}
+
 const oldInput = (req) => {
 	let oldInput = req.flash('oldInput');
 	if (oldInput.length > 0) {
@@ -37,7 +48,7 @@ exports.loginPage = async (req, res, next) => {
 	if (res.locals.isAuthenticated) {
 		res.redirect('/');
 	} else {
-		res.render('login', { layout: 'login_layout', loginPage: true, pageTitle: 'Login', errorMessage: message(req), oldInput: oldInput(req) });
+		res.render('login', { layout: 'login_layout', loginPage: true, pageTitle: 'Login', errorMessage: message(req), oldInput: oldInput(req), infoMessage: infoMsg(req) });
 	}
 };
 
@@ -140,6 +151,7 @@ exports.resetPasswordPage = (req, res, next) => {
 };
 
 exports.resetPassword = (req, res, next) => {
+	console.log(req.body.inputEmail);
 	User.findOne({
 		where: {
 			email: req.body.inputEmail
@@ -148,7 +160,7 @@ exports.resetPassword = (req, res, next) => {
 		.then(user => {
 			if (!user) {
 				req.flash('error', 'No user found with that email');
-				return res.redirect('/login');
+				return res.redirect('/reset-password');
 			} else {
 				return bcrypt
 					.hash(req.body.password, 12)
@@ -160,6 +172,8 @@ exports.resetPassword = (req, res, next) => {
 					})
 			}
 		}).catch(err => { console.log(err) })
+		req.flash('info', 'Password successfully updated');
+		res.redirect('/login')
 }
 
 exports.forgotPasswordPage = (req, res, next) => {

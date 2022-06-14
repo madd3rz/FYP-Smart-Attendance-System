@@ -2,27 +2,29 @@ const express = require('express');
 const router = express.Router();
 const HomeController = require('../app/controllers/HomeController');// load and check auth in homepage
 const AuthController = require('../app/controllers/AuthController');// auth related controller
+const TeacherController = require('../app/controllers/TeacherController'); // teacher related controller
+const AdminController = require('../app/controllers/AdminController'); // admin related controller
 
 router.get('/',HomeController.Homepage);
 router.get('/view', HomeController.viewAttn);
 router.get('/view-search-filter', HomeController.viewAttnTeacherSearch);
 
-router.get('/manage', HomeController.manageStudentParent);
-router.get('/add-student', HomeController.addStudent);
-router.post('/add-student', HomeController.addStudentPOST);
-router.get('/add-parent', HomeController.addParent);
-router.post('/add-parent', HomeController.addParentPOST);
+router.get('/manage', AdminController.manageStudentParent);
+router.get('/add-student', AdminController.addStudent);
+router.post('/add-student', AdminController.addStudentPOST);
+router.get('/add-parent', AdminController.addParent);
+router.post('/add-parent', AdminController.addParentPOST);
+router.get('/edit-student', AdminController.editStudent);
+router.get('/edit-search-student', AdminController.editStudentSearch);
+router.post('/edit-student', AdminController.editStudentPOST);
+router.get('/edit-parent', AdminController.editParent); 
+router.get('/edit-search-parent', AdminController.editParentSearch);
+router.post('/edit-parent', AdminController.editParentPOST);
 
-router.get('/edit-student', HomeController.editStudent);
-router.get('/edit-search-student', HomeController.editStudentSearch);
-router.post('/edit-student', HomeController.editStudentPOST);
-
-router.get('/edit-parent', HomeController.editParent); 
-router.get('/edit-search-parent', HomeController.editParentSearch);
-router.post('/edit-parent', HomeController.editParentPOST);
-
-router.get('/generate-report', HomeController.generateReport);
-router.get('/fetch-report', HomeController.fetchReport);
+router.get('/generate-report', TeacherController.generateReportPage);
+router.get('/daily-report', TeacherController.generateReport);
+router.get('/weekly-report', TeacherController.generateReport);
+router.get('/monthly-report', TeacherController.generateReport);
 
 router.get('/login', AuthController.loginPage);
 router.post('/login', AuthController.login);

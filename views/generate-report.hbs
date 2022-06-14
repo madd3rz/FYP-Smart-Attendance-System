@@ -4,11 +4,21 @@
 
 <div class="container">
   <div class="button-group text-center">
-    <button type="button" class="btn btn-primary btn-lg m-3 mr-4 p-3">Daily Report</button>
-    <button type="button" class="btn btn-primary btn-lg m-3 mr-4 p-3">Weekly Report</button>
-    <button type="button" class="btn btn-primary btn-lg m-3 mr-4 p-3">Monthly Report</button>
+    {{#if errorMessage}}
+    <div id="alert" class="form-row alert alert-danger px-4 ml-5 text-center" role="alert">
+      {{errorMessage}}
+    </div>
+    {{/if}}
+    {{#if infoMessage}}
+    <div id="info" class="form-row alert alert-success px-4 ml-5 text-center" role="alert">
+      {{infoMessage}}
+    </div>
+    {{/if}}
+    <a class="btn btn-primary btn-lg m-3 mr-4 p-3" href="/daily-report" role="button">Daily Report</a>
+    <a class="btn btn-primary btn-lg m-3 mr-4 p-3" href="/weekly-report" role="button">Weekly Report</a>
+    <a class="btn btn-primary btn-lg m-3 mr-4 p-3" href="/monthly-report" role="button">Monthly Report</a>
   </div>
-  <div class="card-deck mb-3">
+  {{!-- <div class="card-deck mb-3">
     <div class="card mb-4 box-shadow">
       <div class="card-header text-left">
         <a class="my-0 font-weight-normal">Custom Report</a>
@@ -45,7 +55,7 @@
         </div>
       </div>
     </div>
-  </div>
+  </div> --}}
 
   <footer class="pt-4 my-md-5 pt-md-5 border-top">
     <div class="row">

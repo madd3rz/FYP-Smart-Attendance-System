@@ -20,7 +20,7 @@ const Attendance = sequelize.define('Attendance', {
         allowNull: false,
     },
     RFIDcode: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.BIGINT,
         allowNull: false,
     },
     /* studentID: {

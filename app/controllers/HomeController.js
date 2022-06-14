@@ -5,8 +5,16 @@ const Student = require('../models/Student');
 const Parent = require('../models/Parent');
 const Attendance = require('../models/Attendance');
 const sequelize = require('../../config/database');
-const join = require('locutus/php/strings/join');
 const LoginUser = require('../models/LoginUser');
+const pdf = require('html-pdf');
+var options = {
+    "format": 'A4',
+    "border": {
+        "top": "20px",
+        "bottom": "25px"
+    },
+    "orientation": "landscape"
+};
 const bcrypt = require('bcryptjs');
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op
@@ -64,7 +72,8 @@ async function getHighTemp(req) {
     var { th, tr } = {};
     includeCondition = {};
     whereCondition = { tempReading: { [Op.gte]: 37.50, }, checkInDateTime: sequelize.where(sequelize.fn('DATE', sequelize.col('Attendance.checkInDateTime')), sequelize.fn('curdate')), }; // WHERE tempReading >=37.50 AND DATE(checkInDateTime)= CURDATE()
-    if (req.session.role === 'parent') {
+    conditionDefault = { where: whereCondition, raw: true, nest: true, attributes: [['recordID', 'Record ID'], ['checkInDateTime', 'Attendance Check In Time'], ['tempReading', 'Temperature'], ['RFIDcode', 'RFID Code'], ['StudentID', 'Student ID']], };
+    if (req.session.isParent) {
         includeCondition = {
             include: [
                 {
@@ -83,9 +92,9 @@ async function getHighTemp(req) {
                 },
             ]
         }
-
+        conditionDefault = { where: whereCondition, raw: true, nest: true, attributes: [['checkInDateTime', 'Attendance Check In Time'], ['tempReading', 'Temperature'], ['StudentID', 'Student ID']], };
     }
-    const conditionDefault = { where: whereCondition, raw: true, nest: true, };
+
     if (includeCondition) {
         condition = merge(conditionDefault, includeCondition)
     }
@@ -99,7 +108,8 @@ async function getHighTemp(req) {
         })
         .catch(err => console.log(err));
     if (mylist.length > 0) {
-        ({ th, tr } = toTable(mylist));
+        const { col, data } = toData(mylist);
+        ({ th, tr } = toTable(req, col, data));
     } else {
         if (req.session.role === 'parent') {
             req.flash('info', "<h3><small class=\"text-muted\">Great! Your kid(s) body temperature is OK!!</small></h3>");
@@ -132,7 +142,7 @@ exports.Homepage = async (req, res, next) => {
     }
 }
 
-function toTable(mylist) {
+function toData(mylist) {
     var col = [];//get thead
     var arr = [];// get td
     const data = [];// array of thead and td elements
@@ -142,20 +152,37 @@ function toTable(mylist) {
             var size = Object.keys(mylist[i][key]).length;
             if (size > 0) {// if there are JOIN tables
                 for (var a in mylist[i][key]) {
-                    if (a.includes("Name")) {
+                    if (a.includes("Student")) {
                         arr.push(mylist[i][key][a]);// store the JOIN table data
                     }
                 }
             } else {
                 arr.push(mylist[i][key]);// store the records data
             }
-
-            if (col.indexOf(key) === -1) {
-                col.push(key);// store the column name
-            }
         }
         data.push(arr);
         arr = [];
+    }
+
+    for (var key in mylist[0]) {// loop through the no of columns in mylist[0]
+        if (col.indexOf(key) === -1) {
+            if (key == 'Student' && size > 0) {// if there are JOIN tables
+                for (var a in mylist[0][key]) {
+                    if (a.includes("Student") && col.indexOf(mylist[0][key][a]) === -1) { //find Student Name 
+                        col.push(a);// store the column name
+                    }
+                }
+            } else
+                col.push(key);// store the column name
+        }
+    }
+    return { col, data };
+}
+
+function toTable(req, col, data) {
+    if (req.url == '/daily-report') {
+        var thStart = '<th scope="col" style="border: 1px solid black;">';
+        var tdStart = '<td style="border: 1px solid black;">'
     }
 
     var thStart = '<th scope="col">'
@@ -184,16 +211,53 @@ function toTable(mylist) {
 exports.viewAttn = async (req, res, next) => {
     var mylist;
     if (req.session.isParent) {
-        res.render('parentView', { pageTitle: 'View Child Attendance' });
-    }
-    else if (req.session.isTeacher) {
-
-        await Attendance.findAll({ include: { model: Student }, raw: true, nest: true })
+        includeCondition = {
+            required: true,
+            model: Student,
+            attributes: { exclude: ['StudentEmail', 'RFIDcode', 'createdAt', 'updatedAt'] },
+            attributes: [['StudentName', 'Student Name'],['StudentClass', 'Student Class']],
+            include:
+            {
+                required: true,
+                model: Parent,
+                attributes: { exclude: ['ParentID','ParentEmail', 'ParentName', 'createdAt', 'updatedAt'] },
+                include:
+                {
+                    model: User,
+                    attributes: ['id'],
+                    where: { id: req.session.user.id }
+                }
+            }
+        }
+        await Attendance.findAll({
+            include: includeCondition, raw: true, nest: true, order: [
+                ['recordID', 'DESC'],
+                ['checkInDateTime', 'DESC'],
+            ], attributes: [['checkInDateTime', 'Attendance Check In Time'], ['tempReading', 'Temperature'], ['StudentID', 'Student ID']]
+        })
             .then(list => {
                 mylist = list;
             })
             .catch(err => console.log(err));
-        const { th, tr } = toTable(mylist);
+        const { col, data } = toData(mylist);
+        const { th, tr } = toTable(req, col, data);
+
+        res.render('parentView', { pageTitle: 'View Child Attendance', errorMessage: errMsg(req), oldInput: oldInput(req), infoMessage: infoMsg(req), thead: th, tbody: tr });
+    }
+    else if (req.session.isTeacher) {
+
+        await Attendance.findAll({
+            include: { model: Student, attributes: [['StudentName', 'Student Name'],['StudentClass', 'Student Class']] }, raw: true, nest: true, order: [
+                ['recordID', 'DESC'],
+                ['checkInDateTime', 'DESC'],
+            ], attributes: [['recordID', 'No'], ['checkInDateTime', 'Attendance Check In Time'], ['tempReading', 'Temperature'], ['StudentID', 'Student ID'],]
+        })
+            .then(list => {
+                mylist = list;
+            })
+            .catch(err => console.log(err));
+        const { col, data } = toData(mylist);
+        const { th, tr } = toTable(req, col, data);
         res.render('teacherView', { pageTitle: 'View All Attendance Records', errorMessage: errMsg(req), oldInput: oldInput(req), infoMessage: infoMsg(req), thead: th, tbody: tr });
     }
     else res.redirect('/');
@@ -228,7 +292,7 @@ exports.viewAttnTeacherSearch = async (req, res) => {
     }
     if (stdclass) {
         includeCondition3 = {
-            StudentClass: stdclass,
+            StudentClass: stdclass
         }
     }
 
@@ -236,16 +300,25 @@ exports.viewAttnTeacherSearch = async (req, res) => {
     const includeCondition = merge(includeCondition1, includeCondition2, includeCondition3);
     var mylist;
 
-    await Attendance.findAll({ where: whereCondition, include: { model: Student, where: includeCondition }, raw: true, nest: true })
+    console.log(whereCondition,includeCondition)
+
+    await Attendance.findAll({
+        where: whereCondition, include: {required: true, model: Student, where: includeCondition, attributes: [['StudentName', 'Student Name']]}, raw: true, nest: true, order: [
+            ['recordID', 'DESC'],
+            ['checkInDateTime', 'DESC'],
+        ], attributes: [['recordID', 'No'], ['checkInDateTime', 'Attendance Check In Time'], ['tempReading', 'Temperature'], ['StudentID', 'Student ID'],]
+    })
         .then(list => {
             if (list.length > 0) {
+                console.log(list);
                 mylist = list;
                 req.session.beforeName = name;
                 req.session.beforeID = id;
                 req.session.beforedate = date;
                 req.session.beforeclass = stdclass;
                 req.flash('oldInput', { studentName: name, studentID: id, studentClass: stdclass, datePicker: date });
-                const { th, tr } = toTable(mylist);
+                const { col, data } = toData(mylist);
+                const { th, tr } = toTable(req, col, data);
                 res.render('teacherView', { pageTitle: 'View All Attendance Records', errorMessage: errMsg(req), oldInput: oldInput(req), infoMessage: infoMsg(req), thead: th, tbody: tr });
             } else {
                 req.flash('error', 'Student is not found');
@@ -254,38 +327,82 @@ exports.viewAttnTeacherSearch = async (req, res) => {
         })
         .catch(err => { console.log(err) });
 }
-
+/* 
 exports.manageStudentParent = async (req, res, next) => {
     res.render('manageUser', { pageTitle: 'Manage Student and Parent List' });
 }
 
+async function toSelection(mylist) {
+
+    var opVal = '<option value="'
+    var opValEnd = '">'
+    var opEnd = '</option> ';
+    var option = "";
+    for (var i = 0; i < mylist.length; i++) {
+        option += opVal + mylist[i]['ParentName'] + opValEnd + mylist[i]['ParentName'] + opEnd;
+    }
+    console.log(option);
+
+    return option;
+}
+
 exports.addStudent = async (req, res, next) => {
-    res.render('addStudent', { pageTitle: 'Add New Student', errorMessage: errMsg(req), oldInput: oldInput(req) });
+    var mylist;
+
+    await Parent.findAll({
+        attributes: ['ParentName'],
+        order: [
+            ['ParentName', 'ASC'],
+        ],
+    })
+        .then(Parent => {
+            mylist = Parent;
+        }).catch(err => { console.log(err) })
+    const result = await toSelection(mylist);
+
+    res.render('addStudent', { pageTitle: 'Add New Student', errorMessage: errMsg(req), oldInput: oldInput(req), selection: result });
 }
 
 exports.addStudentPOST = async (req, res, next) => {
-    Student.findOne({
+    var ParentID;
+    await Parent.findOne({
         where: {
-            StudentName: req.body.studentName,
-            StudentID: req.body.studentID
+            ParentName: req.body.parentName,
         }
     })
-        .then(user => {
-            if (!user) {
-                const user = new Student({
-                    StudentName: req.body.studentName,
-                    StudentID: req.body.studentID,
-                    StudentClass: req.body.studentClass,
-                    RFIDcode: req.body.RFIDcode,
-                });
-                return user.save();
-            } else {
-                req.flash('error', 'Student exists already, please enter a different student.');
-                req.flash('oldInput', { name: req.body.studentName });
+        .then(parent => {
+            if (!parent) {
+                req.flash('error', 'No parent name found in database');
+                req.flash('oldInput', { studentName: req.body.studentName })
                 return res.redirect('/add-student');
             }
+            ParentID = parent.ParentID;
+
+            Student.findOne({
+                where: {
+                    StudentName: req.body.studentName,
+                    StudentID: req.body.studentID
+                }
+            })
+                .then(user => {
+                    if (!user) {
+                        const user = new Student({
+                            StudentName: req.body.studentName,
+                            StudentID: req.body.studentID,
+                            StudentClass: req.body.studentClass,
+                            RFIDcode: req.body.RFIDcode,
+                            ParentID: ParentID
+                        });
+                        user.save();
+                        req.flash('info', 'Successfully add new student');
+                    } else {
+                        req.flash('error', 'Student exists already, please enter a different student.');
+                        req.flash('oldInput', { name: req.body.studentName, class: req.body.studentClass, rfid: req.body.RFIDcode, studentid: req.body.studentID });
+                    }
+                    return res.redirect('/add-student');
+                })
+                .catch(err => console.log(err));
         })
-        .catch(err => console.log(err));
 }
 
 exports.addParent = async (req, res, next) => {
@@ -320,7 +437,8 @@ exports.addParentPOST = async (req, res, next) => {
                                 userId: user.id,
                             })
                             parent.save();
-                            return res.redirect('/')
+                            req.flash('info', 'Successfully add new parent');
+                            return res.redirect('/add-parent');
                         }).catch(err => { console.log(err) });
                     })
                     .catch(err => { console.log(err) })
@@ -342,7 +460,6 @@ exports.editStudentSearch = async (req, res, next) => {
     let name = req.query.searchStudentName;
 
     var data = [id, name];
-    console.log(data);
 
     var whereCondition = {};
 
@@ -372,15 +489,29 @@ exports.editStudentSearch = async (req, res, next) => {
             };
         })
     }
-    console.log(whereCondition);
-    Student.findOne({ where: whereCondition })
+
+    var parentID;
+    await Student.findOne({ where: whereCondition })
         .then(user => {
             if (user) {
-                console.log(user);
+                parentID = user.ParentID;
+            }
+        })
+
+    includeCondition = {
+        required: true,
+        model: Parent,
+        attributes: [['ParentName', 'ParentName'],],
+        where: { ParentID: parentID }
+    }
+
+    Student.findOne({ where: whereCondition, include: includeCondition, raw: true, nest: true, })
+        .then(user => {
+            if (user) {
                 req.session.beforeName = user.StudentName;
                 req.session.beforeID = user.StudentID;
                 req.session.beforeCode = user.RFIDcode;
-                req.flash('oldInput', { name: user.StudentName, class: user.StudentClass, parentName: "John Doe", StudentID: user.StudentID, RFIDcode: user.RFIDcode });
+                req.flash('oldInput', { name: user.StudentName, class: user.StudentClass, parentName: user.Parent.ParentName, StudentID: user.StudentID, RFIDcode: user.RFIDcode });
             } else {
                 req.flash('error', 'Student is not found');
             }
@@ -399,8 +530,6 @@ exports.editStudentPOST = async (req, res, next) => {
     })
         .then(user => {
             if (user) {
-                console.log(user);
-                console.log(req.body);
                 user.update({
                     StudentID: req.body.studentID,
                     StudentName: req.body.studentName,
@@ -465,12 +594,128 @@ exports.editParentPOST = async (req, res, next) => {
 
         })
         .catch(err => { console.log(err) });
-}
-
+} */
+/* 
 exports.generateReport = async (req, res, next) => {
-    res.render('generate-report', { pageTitle: 'Generate Report' });
+    res.render('generate-report', { pageTitle: 'Generate Report', errorMessage: errMsg(req), oldInput: oldInput(req), infoMessage: infoMsg(req) });
 }
 
-exports.fetchReport = async (req, res, next) => {
-    next();
+exports.getDailyReport = async (req, res, next) => {
+
+    var mylist;
+    var { th, tr } = {};
+    whereCondition = { checkInDateTime: sequelize.where(sequelize.fn('DATE', sequelize.col('Attendance.checkInDateTime')), sequelize.fn('curdate')), };
+    const condition = {
+        where: whereCondition, include: { model: Student, attributes: [['StudentName', 'Student Name'],] }, raw: true, nest: true, required: true, order: [
+            ['checkInDateTime', 'DESC'],
+        ], attributes: [['recordID', 'No'], ['checkInDateTime', 'Attendance Check In Time'], ['tempReading', 'Temperature'], ['StudentID', 'Student ID'],]
+    };
+
+    await Attendance.findAll(condition)
+        .then(list => {
+            mylist = list;
+        })
+        .catch(err => console.log(err));
+    if (mylist.length > 0) {
+        const { col, data } = toData(mylist);
+        ({ th, tr } = toTable(req, col, data));
+        var today = new Date();
+        var date = today.getFullYear() + (today.getMonth() + 1) + today.getDate() + '';
+        var path = "./reports/" + date.toString() + ".pdf"
+
+        res.render('reportTemplate', { pageTitle: 'Daily Report', thead: th, tbody: tr, layout: false },
+            function (err, result) {
+                pdf.create(result, options).toFile(path, function (err) {
+                    if (err) {
+                        console.log(err)
+                        req.flash('error', 'Error generating report!');
+                    }
+                    res.download(path, 'daily_report.pdf')
+                })
+            });
+    } else {
+        req.flash('error', 'Empty record today!');
+        res.redirect('/generate-report');
+    }
+
 }
+
+exports.getWeeklyReport = async (req, res, next) => {
+
+    var mylist;
+    var { th, tr } = {};
+    whereCondition = { checkInDateTime: sequelize.where(sequelize.fn('week', sequelize.col('Attendance.checkInDateTime')), '=', sequelize.fn('week', sequelize.fn('now'))), };
+    const condition = {
+        where: whereCondition, include: { model: Student, attributes: [['StudentName', 'Student Name'],] }, raw: true, nest: true, required: true, order: [
+            ['checkInDateTime', 'DESC'],
+        ], attributes: [['recordID', 'No'], ['checkInDateTime', 'Attendance Check In Time'], ['tempReading', 'Temperature'], ['StudentID', 'Student ID'],]
+    };
+
+    await Attendance.findAll(condition)
+        .then(list => {
+            mylist = list;
+        })
+        .catch(err => console.log(err));
+    if (mylist.length > 0) {
+        const { col, data } = toData(mylist);
+        ({ th, tr } = toTable(req, col, data));
+        var today = new Date();
+        var date = today.getFullYear() + (today.getMonth() + 1) + today.getDate() + '';
+        var path = "./reports/" + date.toString() + ".pdf"
+
+        res.render('reportTemplate', { pageTitle: 'Weekly Report', thead: th, tbody: tr, layout: false },
+            function (err, result) {
+                pdf.create(result, options).toFile(path, function (err) {
+                    if (err) {
+                        console.log(err)
+                        req.flash('error', 'Error generating report!');
+                    }
+                    res.download(path, 'weekly.pdf')
+                })
+            });
+    } else {
+        req.flash('error', 'Empty record this week!');
+        res.redirect('/generate-report');
+    }
+
+}
+
+exports.getMonthlyReport = async (req, res, next) => {
+
+    var mylist;
+    var { th, tr } = {};
+    whereCondition = { checkInDateTime: sequelize.where(sequelize.fn('month', sequelize.col('Attendance.checkInDateTime')), '=', sequelize.fn('month', sequelize.fn('now'))), };
+    const condition = {
+        where: whereCondition, include: { model: Student, attributes: [['StudentName', 'Student Name'],] }, raw: true, nest: true, required: true, order: [
+            ['checkInDateTime', 'DESC'],
+        ], attributes: [['recordID', 'No'], ['checkInDateTime', 'Attendance Check In Time'], ['tempReading', 'Temperature'], ['StudentID', 'Student ID'],]
+    };
+
+    await Attendance.findAll(condition)
+        .then(list => {
+            mylist = list;
+        })
+        .catch(err => console.log(err));
+    if (mylist.length > 0) {
+        const { col, data } = toData(mylist);
+        ({ th, tr } = toTable(req, col, data));
+        var today = new Date();
+        var date = today.getFullYear() + (today.getMonth() + 1) + today.getDate() + '';
+        var path = "./reports/" + date.toString() + ".pdf"
+
+        res.render('reportTemplate', { pageTitle: 'Monthly Report', thead: th, tbody: tr, layout: false },
+            function (err, result) {
+                pdf.create(result, options).toFile(path, function (err) {
+                    if (err) {
+                        console.log(err)
+                        req.flash('error', 'Error generating report!');
+                    }
+                    res.download(path, 'monthly_report.pdf')
+                })
+            });
+    } else {
+        req.flash('error', 'Empty record this month!');
+        res.redirect('/generate-report');
+    }
+
+} */

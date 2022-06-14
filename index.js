@@ -31,7 +31,7 @@ app.use(session({
     resave: true,
     saveUninitialized: true,
     secret: process.env.SESSION_SECRET,
-  	cookie: { maxAge: 3600000 }, // 1 hour in milliseconds
+  	cookie: { maxAge: 21600000 }, // 6 hours in milliseconds
     store: new SequelizeStore({
     	db: sequelize,
     	table: "sessions",

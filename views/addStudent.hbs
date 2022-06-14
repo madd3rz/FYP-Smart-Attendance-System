@@ -9,13 +9,17 @@
         <a class="my-0 font-weight-normal">Enter Details</a>
       </div>
       <div class="card-body">
-
-        <form id="addStudentForm" action="/add-student" method="POST" novalidate="">
+        {{#if errorMessage}}
+        <div class="alert alert-danger" role="alert">
+          {{errorMessage}}
+        </div>
+        {{/if}}
+        <form id="addStudentForm" action="/add-student" method="POST">
           <div class="form-row">
             <div class="form-group col-md-8">
               <label for="inputName">Name</label>
-              <input type="text" class="form-control is-invalid" id="studentName" name="studentName"
-                placeholder="Student Full Name" required>
+              <input type="text" class="form-control is-invalid" id="studentName" name="studentName" value="{{oldInput.name}}"
+                placeholder="Student Full Name" required >
               <input type="hidden" value="{{csrfToken}}" name="_csrf">
               <div class="invalid-feedback">
                 What's the student's name?
@@ -23,7 +27,7 @@
             </div>
             <div class="form-group col-md">
               <label for="inputClass">Class</label>
-              <input type="text" class="form-control is-invalid" id="studentClass" name="studentClass"
+              <input type="text" class="form-control is-invalid" id="studentClass" name="studentClass" value="{{oldInput.class}}"
                 placeholder="Student Class" required>
               <div class="invalid-feedback">
                 What's the student's class?
@@ -32,18 +36,26 @@
           </div>
           <div class="form-group">
             <label for="inputName">Parent Name</label>
-            <input type="text" class="form-control" id="parentName" name="parentName" placeholder="Choose...">
+            <select class="custom-select form-control" id="parentName" name="parentName">
+              {{{ selection }}}
+            </select>
           </div>
           <div class="form-row">
             <div class="form-group col-md-6">
               <label for="inputID">Student ID</label>
-              <input type="text" class="form-control" id="studentID" name="studentID"
-                placeholder="Enter Student ID here">
+              <input type="text" class="form-control is-invalid" id="studentID" name="studentID" value="{{oldInput.studentid}}"
+                placeholder="Enter Student ID here" required>
+              <div class="invalid-feedback">
+                What's the student's ID number?
+              </div>
             </div>
             <div class="form-group col-md">
               <label for="inputRFID">RFID code</label>
-              <input type="text" class="form-control" id="RFIDcode" name="RFIDcode"
-                placeholder="Enter Student RFID code here">
+              <input type="text" class="form-control is-invalid" id="RFIDcode" name="RFIDcode" value="{{oldInput.rfid}}"
+                placeholder="Enter Student RFID code here" required>
+              <div class="invalid-feedback">
+                What's the student's RFID tag code?
+              </div>
             </div>
           </div>
           <button type="submit" class="btn btn-primary btn-lg float-right" id="btnSubmit">&#9745; Add Student</button>

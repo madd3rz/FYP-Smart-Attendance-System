@@ -1,6 +1,8 @@
 const Admin = require('../models/Admin');
 const Teacher = require('../models/Teacher');
 const Parent = require('../models/Parent');
+const User = require('../models/LoginUser');
+const bcrypt = require('bcryptjs');
 
 exports.checkUsr = async (req, res, next) => {
     await Admin.findOne({
@@ -38,9 +40,18 @@ exports.checkUsr = async (req, res, next) => {
         }
     })
         .catch(err => console.log(err));
-
 };
 
-exports.checkStatus = async (req, res, next) => {
-
+async function checkStatus (req, res, next){
+    var pass = await bcrypt.hash("testuser123", 12);
+    console.log(req.body.inputPassword)
+    await bcrypt
+        .compare(req.body.inputPassword, pass)
+        .then(doMatch => {
+            if (doMatch) {
+                console.log("default pass detected");
+                req.session.resetPassword = true;
+            }
+            console.log(req.session.resetPassword)
+        }).catch(err => { console.log(err) });
 }

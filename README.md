@@ -8,15 +8,22 @@ This NodeJs project uses Express with Sequelize as ORM and MySQL as database.
 2. ```NPM```
 3. ```MySQL```
 
-### Quick start
+### Quick start for UNIX env
 
 1. Clone the repository.
 2. Change directory to the project folder
-3. Install the dependencies with `npm install`
-4. Create database in MySQL.
-5. Update the your database name and credentials in the `.env` file.
-6. Run the application with `npm start` (MySQL service should be up and running).
-7. Access `http://localhost:80` and you're ready to go!
+3. Create database in MySQL.
+4. Update the your database name and credentials in the `.env` file.
+5. Run the application by executing ```script.sh``` (MySQL service should be up and running).
+6. Access `http://localhost` in the browser and you're ready to go!
+
+### Quick start for WIN env
+1. Clone the repository.
+2. Change directory to the project folder
+3. Create database in MySQL.
+4. Update the your database name and credentials in the `.env` file.
+5. Run the application by executing ```script.bat``` (MySQL service should be up and running).
+6. Access `http://localhost` in the browser and you're ready to go!
 
 ### Folder Structure
 ```
@@ -24,34 +31,17 @@ This NodeJs project uses Express with Sequelize as ORM and MySQL as database.
 ├── app/
 │   ├── controllers/           # Controllers
 │   ├── middlewares/           # Middlewares
-│   ├── models/                # Express database models
+│   ├── models/                # Sequelize database models
 ├── config/
 ├── public/                    
-│   ├── css/                   # Stylesheets
+│   ├── css/
 │   ├── js/                     
 │	├── fonts/                 
 │   ├── images/
-├── .env                       # API keys, passwords, and other sensitive information
+├── .env                       # Contains DB configuration and MQTT broker IP 
 ├── routes/                    # Route definitions
+├── reports/                   # Path to store the generated attendance reports PDF
 ├── views/                     # All view files
 ├── index.js                   # Express application
 └── package.json               # NPM Dependencies and scripts
 ```
-
-## Packages used
-* [nodemon](https://github.com/remy/nodemon) — tool that helps develop node.js based applications by automatically restarting the node application when file changes in the directory are detected.
-* [bcryptjs](https://github.com/dcodeIO/bcrypt.js) — encryption library to hash a password
-* [body-parser](https://github.com/expressjs/body-parser) — Node.js body parsing middleware. Parse incoming request bodies in a middleware before your handlers, available under the req.body property.
-* [express-flash](https://github.com/RGBboy/express-flash) — middleware to store flash messages in the session.
-* [connect-session-sequelize](https://github.com/mweibel/connect-session-sequelize) — SQL session store using Sequelize.js
-* [csurf](https://github.com/expressjs/csurf) — Middleware for CSRF token creation and validation. Requires session middleware to be initialized first. We have used `express-session`
-* [dotenv](https://github.com/motdotla/dotenv) — module to load environment variables from a .env file
-* [express](https://github.com/visionmedia/express) — web application framework for node
-* [express-handlebars](https://github.com/express-handlebars/express-handlebars) — Template engine
-* [express-session](https://github.com/expressjs/session) — Module to create a session middleware. Required for `csurf`.
-* [validator](https://github.com/validatorjs/validator.js) — A library of string validators and sanitizers.
-* [mysql2](https://github.com/sidorares/node-mysql2) — MySQL client for Node.js. Required for Sequelize. 
-* [sequelize](https://github.com/sequelize/sequelize) — Sequelize is a promise-based Node.js ORM for Postgres, MySQL, MariaDB, SQLite and Microsoft SQL Server.
-
-## Readings
-* [How to Architect a Node.Js Project](https://dev.to/shadid12/how-to-architect-a-node-js-project-from-ground-up-1n22)

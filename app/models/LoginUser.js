@@ -44,7 +44,7 @@ const LoginUser = sequelize.define('users', {
 
 LoginUser.hasOne(Parent, {
 	foreignKey: {
-		allowNull: false,
+		allowNull: true,
 	}
 });
 Parent.belongsTo(LoginUser);

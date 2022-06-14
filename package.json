@@ -5,8 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "source .env-example; nodemon index.js",
-    "postinstall": "cp .env-example .env"
+    "start": "nodemon index.js"
   },
   "author": "Woo <68097@siswa.unimas.my>",
   "license": "ISC",
@@ -24,6 +23,7 @@
     "express-flash": "0.0.2",
     "express-handlebars": "^5.1.0",
     "express-session": "^1.17.1",
+    "html-pdf": "^3.0.1",
     "js-datepicker": "^5.18.0",
     "locutus": "^2.0.16",
     "mqtt": "^4.3.7",

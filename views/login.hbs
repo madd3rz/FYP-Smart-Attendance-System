@@ -8,9 +8,20 @@
 			<div class="card-body">
 				<h4 class="card-title ">Login</h4>
 				<form action="/login" id="loginForm" method="POST" class="my-login-validation" novalidate="">
+					{{#if errorMessage}}
+					<div class="alert alert-danger" role="alert">
+						{{errorMessage}}
+					</div>
+					{{/if}}
+					{{#if infoMessage}}
+					<div id="info" class="form-row alert alert-success px-4 ml-5 text-center" role="alert">
+						{{infoMessage}}
+					</div>
+					{{/if}}
 					<div class="form-group">
 						<label for="inputEmail">E-Mail Address</label>
-						<input id="inputEmail" type="email" class="form-control" name="inputEmail" value="{{oldInput.email}}" required autofocus>
+						<input id="inputEmail" type="email" class="form-control" name="inputEmail"
+							value="{{oldInput.email}}" required autofocus>
 						<div class="invalid-feedback">
 							Email is invalid
 						</div>
@@ -18,20 +29,21 @@
 
 					<div class="form-group">
 						<label for="inputPassword">Password
-							<a href="/forgot-password" class="float-right">
+							<a href="/reset-password" class="float-right">
 								Forgot Password?
 							</a>
 						</label>
-						<input type="hidden" name="_csrf" value="{{csrfToken}}" >
-						<input id="inputPassword" type="password" class="form-control" name="inputPassword" required data-eye>
-					    <div class="invalid-feedback">
-					    	Password is required
-				    	</div>
+						<input type="hidden" name="_csrf" value="{{csrfToken}}">
+						<input id="inputPassword" type="password" class="form-control" name="inputPassword" required
+							data-eye>
+						<div class="invalid-feedback">
+							Password is required
+						</div>
 					</div>
 
-					<div class="mt-4 text-center">
+					{{!-- <div class="mt-4 text-center">
 						Don't have an account? <a href="/sign-up">Create One</a>
-					</div>
+					</div> --}}
 
 					<div class="form-group">
 						<div class="custom-checkbox custom-control">
@@ -39,11 +51,7 @@
 							<label for="remember" class="custom-control-label">Remember Me</label>
 						</div>
 					</div>
-					{{#if errorMessage}}
-					<div class="alert alert-danger" role="alert">
-						{{errorMessage}}
-					</div>
-					{{/if}}
+
 					<div class="form-group m-0">
 						<button type="button" id="btnLoginSubmit" class="btn btn-primary btn-block">
 							Login
@@ -53,7 +61,7 @@
 			</div>
 		</div>
 		<div class="footer">
-			Copyright &copy; 2022 &mdash; Woo Zhenghan 
+			Copyright &copy; 2022 &mdash; Woo Zhenghan
 		</div>
 	</div>
 </div>
