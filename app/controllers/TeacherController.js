@@ -6,7 +6,8 @@ var options = {
     "format": 'A4',
     "border": {
         "top": "20px",
-        "bottom": "25px"
+        "bottom": "25px",
+        "left": "10px"
     },
     "orientation": "landscape"
 };
@@ -191,9 +192,9 @@ exports.generateReport = async (req, res) => {
         whereCondition = {};
     }
     const condition = {
-        where: whereCondition, include: { model: Student, attributes: [['StudentName', 'Student Name'],] }, raw: true, nest: true, required: true, order: [
+        where: whereCondition, include: { model: Student, attributes: [['StudentName', 'Student Name'], ['StudentClass', 'Student Class']] }, raw: true, nest: true, required: true, order: [
             ['checkInDateTime', 'DESC'],
-        ], attributes: [['recordID', 'No'], ['checkInDateTime', 'Attendance Check In Time'], ['tempReading', 'Temperature'], ['StudentID', 'Student ID'],]
+        ], attributes: [['recordID', 'No'], [sequelize.fn("DATE_FORMAT", sequelize.col('Attendance.checkInDateTime'), "%Y-%m-%e %H:%i:%s"), 'Attendance Check In Time'], ['tempReading', 'Temperature'], ['StudentID', 'Student ID'],]
     };
 
     await Attendance.findAll(condition)
@@ -219,7 +220,7 @@ exports.generateReport = async (req, res) => {
                 })
             });
     } else {
-        req.flash('error', 'Empty record today!');
+        req.flash('error', 'Empty record!');
         res.redirect('/generate-report');
     }
 
@@ -233,10 +234,15 @@ function toData(mylist) {
     for (var i = 0; i < mylist.length; i++) { //loop through the len of records
         for (var key in mylist[i]) {// loop through the no of columns in mylist[i]
             var size = Object.keys(mylist[i][key]).length;
-            if (size > 0) {// if there are JOIN tables
-                for (var a in mylist[i][key]) {
-                    if (a.includes("Name")) {
-                        arr.push(mylist[i][key][a]);// store the JOIN table data
+            if (size > 0) {// if there are JOIN tables or to store DATE string val
+                if (typeof (mylist[i][key]) === 'string') {// for DATE string val
+                    arr.push(mylist[i][key]);
+                }
+                else {
+                    for (var a in mylist[i][key]) {
+                        if (a.includes("Student")) {
+                            arr.push(mylist[i][key][a]);// store the JOIN table data
+                        }
                     }
                 }
             } else {
@@ -251,7 +257,7 @@ function toData(mylist) {
         if (col.indexOf(key) === -1) {
             if (key == 'Student' && size > 0) {// if there are JOIN tables
                 for (var a in mylist[0][key]) {
-                    if (a.includes("Name") && col.indexOf(mylist[0][key][a]) === -1) { //find Student Name 
+                    if (a.includes("Student") && col.indexOf(mylist[0][key][a]) === -1) { //find Student Name 
                         col.push(a);// store the column name
                     }
                 }
